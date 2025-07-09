@@ -1,7 +1,5 @@
-// Конфигурация Gemini API
-const GEMINI_API_KEY = 'AIzaSyB5XpHcUwtXqDAhXDHupKqJVQpjRZ3CP6Y'
+const GEMINI_API_KEY = 'AIzaSyB5XpHcUwtXqDAhXDHupKqJVQpjRZ3CP6Y';
 
-// Функция для отправки запроса в Gemini AI
 async function callGeminiAPI(promptText) {
 	console.log(
 		'Попытка отправить запрос в Gemini AI с промптом:',
@@ -15,7 +13,7 @@ async function callGeminiAPI(promptText) {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'X-goog-api-key': GEMINI_API_KEY, // Исправлено: используем переменную вместо строки
+					'X-goog-api-key': GEMINI_API_KEY,
 				},
 				body: JSON.stringify({
 					contents: [
@@ -49,7 +47,6 @@ async function callGeminiAPI(promptText) {
 
 		const data = await response.json()
 
-		// Проверяем структуру ответа Gemini
 		if (
 			data.candidates &&
 			data.candidates.length > 0 &&
@@ -70,7 +67,6 @@ async function callGeminiAPI(promptText) {
 	}
 }
 
-// Функция для проверки валидности API ключа
 function validateAPIKey() {
 	if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
 		throw new Error(
@@ -79,19 +75,15 @@ function validateAPIKey() {
 	}
 }
 
-// Слушатель сообщений от других частей расширения
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	console.log('Получен запрос в background.js:', request.action)
 
-	// Обработка запроса на резюмирование чата
 	if (request.action === 'summarizeChatMessages') {
 		console.log('Получен запрос на резюмирование чата от content.js/popup.js')
 
 		try {
-			// Проверяем API ключ
 			validateAPIKey()
 
-			// Получаем сообщения чата
 			const chatMessages = request.chatMessages
 			if (!chatMessages || chatMessages.length === 0) {
 				console.error('Нет сообщений для резюмирования.')
@@ -102,7 +94,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				return false
 			}
 
-			// Формируем промпт для Gemini
 			const prompt = `Пожалуйста, сделай краткое резюме следующих сообщений чата Telegram. 
                            Фокусируйся на ключевых темах, вопросах и решениях. Выдели основные моменты.
                            Резюме должно быть лаконичным, информативным и не превышать 200 слов.
@@ -111,7 +102,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 Сообщения чата:
 ${chatMessages}`
 
-			// Вызываем Gemini API
 			callGeminiAPI(prompt)
 				.then(summary => {
 					console.log(
@@ -131,7 +121,7 @@ ${chatMessages}`
 					})
 				})
 
-			return true // Асинхронный ответ
+			return true
 		} catch (error) {
 			console.error('Ошибка валидации:', error)
 			sendResponse({
@@ -142,7 +132,6 @@ ${chatMessages}`
 		}
 	}
 
-	// Обработка запроса на генерацию предлагаемых сообщений
 	if (request.action === 'generateSuggestedMessages') {
 		console.log('Получен запрос на генерацию предлагаемых сообщений')
 
@@ -169,11 +158,10 @@ ${chatMessages}`
 			callGeminiAPI(prompt)
 				.then(suggestions => {
 					console.log('Предлагаемые сообщения сгенерированы:', suggestions)
-					// Разбиваем по строкам и фильтруем пустые
 					const suggestionsArray = suggestions
 						.split('\n')
 						.filter(line => line.trim().length > 0)
-						.map(line => line.replace(/^\d+\.\s*/, '').trim()) // Убираем нумерацию
+						.map(line => line.replace(/^\d+\.\s*/, '').trim())
 						.filter(line => line.length > 0)
 
 					sendResponse({
@@ -199,7 +187,6 @@ ${chatMessages}`
 		}
 	}
 
-	// Тестовый запрос для проверки работы Gemini API
 	if (request.action === 'testGemini') {
 		console.log('Запуск тестового запроса к Gemini API')
 
@@ -234,7 +221,6 @@ ${chatMessages}`
 		}
 	}
 
-	// Запрос на получение статуса API
 	if (request.action === 'getAPIStatus') {
 		const isConfigured =
 			GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE'
@@ -249,7 +235,6 @@ ${chatMessages}`
 		return false
 	}
 
-	// Если действие не распознано
 	console.warn('Неизвестное действие:', request.action)
 	sendResponse({
 		success: false,
@@ -258,12 +243,10 @@ ${chatMessages}`
 	return false
 })
 
-// Слушатель установки расширения
 chrome.runtime.onInstalled.addListener(() => {
 	console.log('Расширение Grensa.AI для Telegram установлено')
 })
 
-// Слушатель запуска расширения
 chrome.runtime.onStartup.addListener(() => {
 	console.log('Расширение Grensa.AI для Telegram запущено')
 })

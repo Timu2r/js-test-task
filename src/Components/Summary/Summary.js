@@ -1,75 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components'
+import styled, { keyframes } from 'styled-components';
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
 
 const Container = styled.div`
-	padding: 16px;
-	background: #f8f9fa;
-	border-radius: 8px;
-	border-left: 4px solid #6366f1;
-	margin-top: 15px;
-`
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    animation: ${fadeIn} 0.5s ease-out;
+`;
 
 const SummaryTitle = styled.h3`
-	margin: 0 0 12px 0;
-	color: #111827;
-	font-size: 16px;
-	font-weight: 600;
-`
+    margin: 0 0 16px 0;
+    color: #212529;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
 
 const Text = styled.p`
-	margin: 0;
-	color: #6b7280;
-	font-size: 14px;
-	line-height: 1.5;
-	white-space: pre-wrap;
-`
+    margin: 0;
+    color: #495057;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+`;
 
 const StyledButton = styled.button`
-	background-color: #007bff;
-	color: white;
-	padding: 10px 15px;
-	border: none;
-	border-radius: 5px;
-	cursor: pointer;
-	font-size: 14px;
-	margin-top: 15px;
-	width: 100%;
-	transition: background-color 0.2s;
-	
-	&:hover:not(:disabled) {
-		background-color: #0056b3;
-	}
-	
-	&:disabled {
-		background-color: #cccccc;
-		cursor: not-allowed;
-	}
-`
+    background-color: #6366f1;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 20px;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    letter-spacing: 0.5px;
+    
+    &:hover:not(:disabled) {
+        background-color: #4f46e5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+    
+    &:disabled {
+        background-color: #ced4da;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+`;
 
 const ErrorText = styled.p`
-	color: #dc3545;
-	font-size: 12px;
-	margin-top: 10px;
-	padding: 8px;
-	background-color: #f8d7da;
-	border: 1px solid #f5c6cb;
-	border-radius: 4px;
-`
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 15px;
+    padding: 10px 15px;
+    background-color: #fdeded;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    font-weight: 500;
+`;
 
 const LoadingSpinner = styled.div`
-	display: inline-block;
-	width: 16px;
-	height: 16px;
-	border: 2px solid #6b7280;
-	border-radius: 50%;
-	border-top-color: transparent;
-	animation: spin 1s linear infinite;
-	margin-right: 8px;
-	
-	@keyframes spin {
-		to { transform: rotate(360deg); }
-	}
-`
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #ced4da;
+    border-radius: 50%;
+    border-top-color: #6366f1;
+    animation: ${spin} 0.8s linear infinite;
+    margin-right: 10px;
+`;
 
 export const Summary = () => {
   const [summary, setSummary] = useState('');
@@ -82,14 +104,12 @@ export const Summary = () => {
     setSummary('');
 
     try {
-        // Шаг 1: Получаем сообщения из активной вкладки через content script
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
         if (!tab || !tab.url.includes('web.telegram.org')) {
             throw new Error('Пожалуйста, откройте страницу Telegram Web в активной вкладке');
         }
 
-        // Шаг 2: Отправляем запрос в content script для получения сообщений
         const messagesResponse = await new Promise((resolve, reject) => {
             chrome.tabs.sendMessage(tab.id, { action: "getChatMessages" }, (response) => {
                 if (chrome.runtime.lastError) {
@@ -109,7 +129,6 @@ export const Summary = () => {
 
         console.log('Получены сообщения:', messagesResponse.messages.length);
 
-        // Шаг 3: Отправляем сообщения в background script для генерации резюме
         const summaryResponse = await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage({
                 action: "summarizeChatMessages",
@@ -138,7 +157,6 @@ export const Summary = () => {
     }
   };
 
-  // Функция для проверки статуса API
   const checkAPIStatus = async () => {
     try {
       const response = await new Promise((resolve) => {
@@ -154,7 +172,6 @@ export const Summary = () => {
   };
 
   useEffect(() => {
-    // Проверяем статус API при загрузке компонента
     checkAPIStatus();
 
     const handleMessage = (request, sender, sendResponse) => {
